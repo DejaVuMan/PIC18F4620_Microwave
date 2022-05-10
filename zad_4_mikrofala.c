@@ -228,10 +228,6 @@ void main(void) {
             {
                 is_running = !is_running;
             }
-            else
-            {
-                is_running = false;
-            }
             continue;
         }
         
