@@ -136,20 +136,60 @@ void lcd_init(void)
     lcd_cmd(L_L1);
 }
 
+void lcd_dat(unsigned char val)
+{
+	LENA=1;
+        lcd_wr(val);
+        LDAT=1;
+        //delay(3);
+        LENA=0;
+        //delay(3);
+	LENA=1;
+}
+
+void lcd_str(const char* str)
+{
+ unsigned char i=0;
+  
+ while(str[i] != 0 )
+ {
+   lcd_dat(str[i]);
+   i++;
+ }  
+}
+
 void main(void) {
+    
+    ADCON0=0x01;
+    ADCON1=0x0B;
+    ADCON2=0x01;
+    
+    TRISA=0xC3;
+    TRISB=0x3F;   
+    TRISC=0x01;
+    TRISD=0x00;
+    TRISE=0x00;
     
     lcd_init(); 
     // Initialize LCD Screen with ~1s delay to account for init time,
     // and set mode to 0x38 (8bit, 2x16)
     lcd_cmd(L_CLR); // Clear LCD Screen using 0x01 command 
     
-    unsigned int power = 600; // values to store microwave data
+    unsigned int power = 800; // values to store microwave data
     unsigned int time = 0;
     bool is_running = false; // boolean type provided by stdbool.h
+    
+    delay(1000);
+    lcd_cmd(L_CLR);
+    lcd_cmd(L_L1); //Ustawienie karetki w pierwszej linii
+    lcd_str("Good evening  "); //napis
+    delay(500);
+    lcd_cmd(L_CLR);
     
     while(1)
     {
         delay(50); // 50ms delay
+        
         if(is_running) // if microwave is on
         {
             if(time) // if there is time remaining to count down
@@ -163,7 +203,7 @@ void main(void) {
                  * branch mispred: 20-50ns
                  * L2 fetch: 6ns
                  */
-                delay(999);
+                delay(950);
             }
             else
             {
@@ -171,13 +211,22 @@ void main(void) {
             }
         }
         
-        if(!PORTBbits.RB1) // if value is 0 | Start/Stop
+        if(!PORTBbits.RB0) // if value is 0 | RESET
         {
             if(!is_running) // reset is doable if microwave is off
             {
                 // set default values
                 power = 800;
                 time = 0;
+            }
+            continue;
+        }
+        
+        if(!PORTBbits.RB1) // Start/Stop
+        {
+            if(!is_running)
+            {
+                is_running = !is_running;
             }
             continue;
         }
@@ -191,7 +240,42 @@ void main(void) {
             }
             continue;
         }
+        
+        if(!PORTBbits.RB4) // Add Minute
+        {
+            time = time + 60;
+            if(time > 3600)
+            {
+                time = 0;
+            }
+            continue;
+        }
+        
+        // Change power level
+        // if(!PORTBbits.RB5)
+        // {
+        //  ...
+        // }
+        
+        char power_level[] = "PWR:           W";
+        power_level[12] = power/100 + '0'; // ones
+        power_level[13] = (power/10 - (power/100 * 10)) + '0';// tens
+        power_level[14] = (power - (power/100 * 100) - ((power/10 - (power/100 * 10)) * 10)) + '0';
+        
+        int minutes = time / 60;
+        int seconds = time - (minutes * 60);
+        
+        char time_disp[] = "Time:           ";
+        time_disp[11] = minutes / 10 + '0';
+        time_disp[12] = minutes - (minutes / 10 * 10) + '0';
+        time_disp[13] = ':';
+        time_disp[14] = seconds/10 + '0';
+        time_disp[15] = seconds - (seconds / 10 * 10) + '0';
+        
+        lcd_cmd(L_L1);
+        lcd_str(power_level);
+        lcd_cmd(L_L2);
+        lcd_str(time_disp);
     }
-    
     return;
 }
