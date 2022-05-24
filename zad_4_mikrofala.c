@@ -229,14 +229,18 @@ void main(void) {
                 is_running = false;
                 continue;
             }
-            is_running = true;
-            continue;
+            else
+            {
+                is_running = true;
+                continue;  
+            }
         }
         
         if(!PORTBbits.RB3) // Add 10 seconds
         {
-            time += 10;
-            delay(25);
+            
+            time += 10; // 0x0000 -> 0x000A (10) -> 0x0014 (20)
+            delay(100);
             if(time > 3600)
             {
                 time = 0; // reset time if it gets greater than 1 hour
@@ -244,7 +248,7 @@ void main(void) {
             continue;
         }
         
-        if(!PORTBbits.RB4) // Add Minute
+        if(!PORTBbits.RB4) // Add Minute on signal interrupt with button press
         {
             time += 60;
             delay(25); // how do we force keypad to sleep to prevent ghosting?
