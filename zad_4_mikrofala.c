@@ -207,7 +207,7 @@ void main(void) {
             }
             else
             {
-                is_running = !is_running; // turn off microwave, flip bool
+                is_running = false;
             }
         }
         
@@ -224,16 +224,19 @@ void main(void) {
         
         if(!PORTBbits.RB1) // Start/Stop
         {
-            if(!is_running)
+            if(is_running)
             {
-                is_running = !is_running;
+                is_running = false;
+                continue;
             }
+            is_running = true;
             continue;
         }
         
         if(!PORTBbits.RB3) // Add 10 seconds
         {
-            time = time + 10;
+            time += 10;
+            delay(25);
             if(time > 3600)
             {
                 time = 0; // reset time if it gets greater than 1 hour
@@ -243,7 +246,8 @@ void main(void) {
         
         if(!PORTBbits.RB4) // Add Minute
         {
-            time = time + 60;
+            time += 60;
+            delay(25); // how do we force keypad to sleep to prevent ghosting?
             if(time > 3600)
             {
                 time = 0;
@@ -252,10 +256,22 @@ void main(void) {
         }
         
         // Change power level
-        // if(!PORTBbits.RB5)
-        // {
-        //  ...
-        // }
+        if(!PORTBbits.RB5)
+        {
+            if(power == 800)
+            {
+                power = 600;
+            }
+            else if (power == 600)
+            {
+                power = 400;
+            }
+            else
+            {
+                power = 800;
+            }
+            continue;
+        }
         
         char power_level[] = "PWR:           W";
         power_level[12] = power/100 + '0'; // ones
