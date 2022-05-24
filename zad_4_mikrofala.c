@@ -224,16 +224,9 @@ void main(void) {
         
         if(!PORTBbits.RB1) // Start/Stop
         {
-            if(is_running)
-            {
-                is_running = false;
-                continue;
-            }
-            else
-            {
-                is_running = true;
-                continue;  
-            }
+            is_running = !is_running;
+            delay(100); // ensure double press doesnt occur
+            continue;
         }
         
         if(!PORTBbits.RB3) // Add 10 seconds
