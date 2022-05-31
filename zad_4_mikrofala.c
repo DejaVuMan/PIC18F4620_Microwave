@@ -158,6 +158,22 @@ void lcd_str(const char* str)
  }  
 }
 
+void time_display_update(char* power_level, char* time_disp, unsigned int power, unsigned int time)
+{
+    power_level[12] = power/100 + '0'; // ones
+    power_level[13] = (power/10 - (power/100 * 10)) + '0';// tens
+    power_level[14] = (power - (power/100 * 100) - ((power/10 - (power/100 * 10)) * 10)) + '0';
+    
+    int minutes = time / 60;
+    int seconds = time - (minutes * 60);
+    
+    time_disp[11] = minutes / 10 + '0';
+    time_disp[12] = minutes - (minutes / 10 * 10) + '0';
+    time_disp[13] = ':';
+    time_disp[14] = seconds/10 + '0';
+    time_disp[15] = seconds - (seconds / 10 * 10) + '0';
+}
+
 void main(void) {
     
     ADCON0=0x01;
@@ -178,6 +194,7 @@ void main(void) {
     unsigned int power = 800; // values to store microwave data
     unsigned int time = 0;
     bool is_running = false; // boolean type provided by stdbool.h
+    bool flag = false;
     
     delay(1000);
     lcd_cmd(L_CLR);
@@ -222,17 +239,25 @@ void main(void) {
             continue;
         }
         
-        if(!PORTBbits.RB1) // Start/Stop
+        if(!PORTBbits.RB1 && !flag) // Start/Stop
         {
             is_running = !is_running;
-            delay(100); // ensure double press doesnt occur
+            flag = true;
+            delay(40); // ensure double press doesnt occur
+            continue;
+        }
+        
+        if(!PORTBbits.RB1 && flag) // Start/Stop
+        {
+            is_running = !is_running;
+            flag = false;
+            delay(40); // ensure double press doesnt occur
             continue;
         }
         
         if(!PORTBbits.RB3) // Add 10 seconds
         {
-            
-            time += 10; // 0x0000 -> 0x000A (10) -> 0x0014 (20)
+            time += 10;
             delay(100);
             if(time > 3600)
             {
@@ -271,19 +296,9 @@ void main(void) {
         }
         
         char power_level[] = "PWR:           W";
-        power_level[12] = power/100 + '0'; // ones
-        power_level[13] = (power/10 - (power/100 * 10)) + '0';// tens
-        power_level[14] = (power - (power/100 * 100) - ((power/10 - (power/100 * 10)) * 10)) + '0';
-        
-        int minutes = time / 60;
-        int seconds = time - (minutes * 60);
-        
         char time_disp[] = "Time:           ";
-        time_disp[11] = minutes / 10 + '0';
-        time_disp[12] = minutes - (minutes / 10 * 10) + '0';
-        time_disp[13] = ':';
-        time_disp[14] = seconds/10 + '0';
-        time_disp[15] = seconds - (seconds / 10 * 10) + '0';
+        
+        time_display_update(power_level, time_disp, power, time);
         
         lcd_cmd(L_L1);
         lcd_str(power_level);
